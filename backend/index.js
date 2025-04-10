@@ -9,13 +9,24 @@ const NewUser = require("./model/Newuser");
 const bcrypt = require("bcryptjs");
 const Stripe = require("stripe");
 const Cart = require("./model/Cart");
+const rateLimit = require('express-rate-limit');
 require("dotenv").config();
+
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: "Too many requests from this IP, please try again later.",
+});
+
+app.use(limiter);
+
 
 app.listen(port, () => {
   console.log(`Server is running at http://localhost:${port}`);
 });
 
-mongoose.connect("mongodb://127.0.0.1:27017/ecommerce", {
+mongoose.connect(process.env.MONGOOS, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
@@ -137,7 +148,7 @@ app.post("/login", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error", details: error.message });
   }
 });
-const stripe = Stripe("sk_test_51QxRlwHOmiBafKm0UwHT5i1ikYe0jJthLBToKG2OkWVgNfSTaWY3E01UO2VLGZ3QJCqBliDAeQSw5aiEbdiivztH00EfI4vE7Y");
+const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 app.post("/create-payment-intent", async (req, res) => {
   const { amount } = req.body;
 
