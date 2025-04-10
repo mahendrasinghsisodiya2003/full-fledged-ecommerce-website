@@ -29,7 +29,7 @@ const Signup = ({ setUser }) => {
   
     try {
       console.log("Sending signup request for email:", email); // Log the email
-      const response = await axios.post("http://localhost:3030/signup", {
+      const response = await axios.post("https://full-fledged-ecommerce-website.onrender.com/signup", {
         username,
         email,
         password,

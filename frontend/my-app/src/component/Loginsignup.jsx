@@ -27,7 +27,7 @@ const LoginSignup = ({ setUser }) => {
         password,
       }); // Log the request payload
   
-      const response = await axios.post("http://localhost:3030/login", {
+      const response = await axios.post("https://full-fledged-ecommerce-website.onrender.com/login", {
         email: normalizedEmail, // Send the full email address
         password,
       });

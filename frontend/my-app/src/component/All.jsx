@@ -9,7 +9,7 @@ const All = () => {
 
   useEffect(() => {
     if (!isFetched.current) {
-      fetch("http://localhost:3030/all")
+      fetch("https://full-fledged-ecommerce-website.onrender.com/all")
         .then((response) => response.json())
         .then((data) => {
           setProducts(data);

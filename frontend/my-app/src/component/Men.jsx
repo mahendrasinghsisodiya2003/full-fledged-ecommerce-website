@@ -9,7 +9,7 @@ const Men = () => {
 
   useEffect(() => {
     if (!isFetched.current) {
-      fetch("http://localhost:3030/men") // Update the API endpoint for men's products
+      fetch("https://full-fledged-ecommerce-website.onrender.com/men") // Update the API endpoint for men's products
         .then((response) => response.json())
         .then((data) => {
           setProducts(data);

@@ -11,7 +11,7 @@ const Productdisplay = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let apiUrl = `http://localhost:3030/${category}`;
+    let apiUrl = `https://full-fledged-ecommerce-website.onrender.com/${category}`;
     fetch(apiUrl)
       .then((response) => response.json())
       .then((data) => {
