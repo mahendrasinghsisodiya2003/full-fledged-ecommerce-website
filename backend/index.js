@@ -34,7 +34,10 @@ mongoose.connect(process.env.MONGOOS, {
 .catch((err) => console.error("❌ MongoDB Connection Error:", err));
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: "*",
+  credentials: true
+}));
 app.use(express.json());
 
 // Route to fetch data when frontend requests `/all`

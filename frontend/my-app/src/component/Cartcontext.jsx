@@ -25,18 +25,37 @@ export const AppProvider = ({ children }) => {
     localStorage.setItem("cart", JSON.stringify(cart));
   }, [cart]);
 
+  // Fetch cart from server when user logs in
+  useEffect(() => {
+    if (user) {
+      fetchCartFromServer(user._id);
+    }
+  }, [user]);
+
+  const fetchCartFromServer = async (userId) => {
+    try {
+      const response = await fetch(`https://full-fledged-ecommerce-website.onrender.com/getcart/${userId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setCart(data.cart); // assuming your response is { cart: [...] }
+      } else {
+        console.error("Failed to fetch cart from server");
+      }
+    } catch (error) {
+      console.error("Error fetching cart from server:", error);
+    }
+  };
+
   // Add to cart
   const addToCart = (product) => {
     setCart((prevCart) => {
       const existingItem = prevCart.find((item) => item.id === product.id);
 
       if (existingItem) {
-        // If the item already exists, update its quantity
         return prevCart.map((item) =>
           item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
         );
       } else {
-        // If the item doesn't exist, add it to the cart
         return [...prevCart, { ...product, quantity: 1 }];
       }
     });
