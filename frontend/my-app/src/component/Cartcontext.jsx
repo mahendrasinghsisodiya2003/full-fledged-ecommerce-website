@@ -37,7 +37,7 @@ export const AppProvider = ({ children }) => {
       const response = await fetch(`https://full-fledged-ecommerce-website.onrender.com/getcart/${userId}`);
       if (response.ok) {
         const data = await response.json();
-        setCart(data.cart); // assuming your response is { cart: [...] }
+        setCart(data.cart||[]);
       } else {
         console.error("Failed to fetch cart from server");
       }

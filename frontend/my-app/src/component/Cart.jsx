@@ -7,8 +7,7 @@ const Cart = () => {
   const navigate = useNavigate();
 
   // Calculate total price of items
-  const totalPrice = cart.reduce((total, item) => total + item.price * item.quantity, 0);
-
+  const totalPrice = (cart || []).reduce((total, item) => total + item.price * item.quantity, 0);
   return (
     <div className="max-w-4xl mx-auto my-10 p-6 bg-white shadow-lg rounded-lg">
       <h2 className="text-3xl font-bold mb-6 text-center">Shopping Cart 🛒</h2>
