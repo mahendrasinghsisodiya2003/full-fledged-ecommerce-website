@@ -21,9 +21,9 @@ const Header = ({ user, setUser }) => {
       <div className="flex items-center">
         <Link to="/">
           <img
-            src=".\src\assets\alliedclublogo.jpeg"
+            src="/alliedclublogo.jpeg"
             alt="Company Logo"
-            className="cursor-pointer rounded-full h-16 w-16 object-cover" // Fixed size for logo
+            className="cursor-pointer rounded-full h-16 w-16 object-cover"
           />
         </Link>
       </div>
