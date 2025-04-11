@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useCart } from "./Cartcontext";
+import { useCart } from "./cartcontext";
 
 const Productdisplay = () => {
   const { category, id } = useParams();

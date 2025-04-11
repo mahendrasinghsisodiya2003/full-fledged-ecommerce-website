@@ -8,7 +8,7 @@ import All from "./component/All";
 import LoginSignup from "./component/Loginsignup";
 import Signup from "./component/Signup";
 import Productdisplay from "./component/Productdisplay";
-import { AppProvider } from "./component/Cartcontext";
+import { AppProvider } from "./component/cartcontext";
 import Userpage from "./component/Userpage";
 import { useEffect, useState } from "react";
 import Protectedroute from "./component/Protectedroute";
