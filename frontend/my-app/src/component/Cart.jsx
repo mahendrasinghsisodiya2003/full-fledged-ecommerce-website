@@ -1,13 +1,27 @@
-import React from "react";
-import { useCart } from "./cartcontext.jsx";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 const Cart = () => {
-  const { cart, removeFromCart } = useCart();
+  const [cart, setCart] = useState([]);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Load cart from localStorage
+    const savedCart = localStorage.getItem('cart');
+    if (savedCart) {
+      setCart(JSON.parse(savedCart));
+    }
+  }, []);
+
+  const removeFromCart = (productId) => {
+    const newCart = cart.filter((item) => item.id !== productId);
+    setCart(newCart);
+    localStorage.setItem('cart', JSON.stringify(newCart));
+  };
 
   // Calculate total price of items
   const totalPrice = (cart || []).reduce((total, item) => total + item.price * item.quantity, 0);
+
   return (
     <div className="max-w-4xl mx-auto my-10 p-6 bg-white shadow-lg rounded-lg">
       <h2 className="text-3xl font-bold mb-6 text-center">Shopping Cart 🛒</h2>

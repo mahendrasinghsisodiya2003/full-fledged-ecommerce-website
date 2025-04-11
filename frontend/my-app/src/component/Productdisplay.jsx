@@ -1,14 +1,20 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useCart } from "./cartcontext.jsx";
 
 const Productdisplay = () => {
   const { category, id } = useParams();
   const navigate = useNavigate();
-  const { cart, addToCart, removeFromCart } = useCart(); // Use useCart
-
+  const [cart, setCart] = useState([]);
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Load cart from localStorage
+    const savedCart = localStorage.getItem('cart');
+    if (savedCart) {
+      setCart(JSON.parse(savedCart));
+    }
+  }, []);
 
   useEffect(() => {
     let apiUrl = `https://full-fledged-ecommerce-website.onrender.com/${category}`;
@@ -24,6 +30,26 @@ const Productdisplay = () => {
         setLoading(false);
       });
   }, [category, id]);
+
+  const addToCart = (product) => {
+    const newCart = [...cart];
+    const existingItem = newCart.find((item) => item.id === product.id);
+
+    if (existingItem) {
+      existingItem.quantity += 1;
+    } else {
+      newCart.push({ ...product, quantity: 1 });
+    }
+
+    setCart(newCart);
+    localStorage.setItem('cart', JSON.stringify(newCart));
+  };
+
+  const removeFromCart = (productId) => {
+    const newCart = cart.filter((item) => item.id !== productId);
+    setCart(newCart);
+    localStorage.setItem('cart', JSON.stringify(newCart));
+  };
 
   if (loading) return <p>Loading...</p>;
   if (!product) return <p>Product not found.</p>;

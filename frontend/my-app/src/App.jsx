@@ -1,23 +1,21 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import Header from "./component/Header";
-import Shop from "./component/Shop";
-import Men from "./component/Men";
-import Women from "./component/Women";
-import Cart from "./component/Cart";
-import All from "./component/All";
-import LoginSignup from "./component/Loginsignup";
-import Signup from "./component/Signup";
-import Productdisplay from "./component/Productdisplay";
-import { AppProvider } from "./component/cartcontext.jsx";
-import Userpage from "./component/Userpage";
+import Header from "@/component/Header";
+import Shop from "@/component/Shop";
+import Men from "@/component/Men";
+import Women from "@/component/Women";
+import Cart from "@/component/Cart";
+import All from "@/component/All";
+import LoginSignup from "@/component/Loginsignup";
+import Signup from "@/component/Signup";
+import Productdisplay from "@/component/Productdisplay";
+import Userpage from "@/component/Userpage";
 import { useEffect, useState } from "react";
-import Protectedroute from "./component/Protectedroute";
-import Buy from "./component/Buy";
+import Protectedroute from "@/component/Protectedroute";
+import Buy from "@/component/Buy";
 
 function App() {
-  const [user, setUser] = useState(null); // Move user state inside App
+  const [user, setUser] = useState(null);
 
-  // ✅ Correct useEffect usage
   useEffect(() => {
     const userData = localStorage.getItem("user");
   
@@ -26,16 +24,15 @@ function App() {
         setUser(JSON.parse(userData));
       } catch (error) {
         console.error("Error parsing user data:", error);
-        localStorage.removeItem("user"); // Clear corrupted data
+        localStorage.removeItem("user");
       }
     }
   }, []);
 
   return (
-    <AppProvider>
+    <>
       <Header user={user} setUser={setUser} />
       <Routes>
-        {/* Redirect to /username if logged in, else show Shop */}
         <Route
           path="/"
           element={
@@ -46,7 +43,6 @@ function App() {
             )
           }
         />
-        {/* User-specific route */}
         <Route path="/login" element={<LoginSignup setUser={setUser} />} />
         <Route path="/signup" element={<Signup setUser={setUser} />} />
         <Route element={<Protectedroute user={user} />}>
@@ -59,7 +55,7 @@ function App() {
           <Route path=":category/:id" element={<Productdisplay />} />
         </Route>
       </Routes>
-    </AppProvider>
+    </>
   );
 }
 
