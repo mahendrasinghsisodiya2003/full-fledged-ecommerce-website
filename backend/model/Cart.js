@@ -6,7 +6,7 @@ const cartItemSchema = new mongoose.Schema({
 });
 
 const cartSchema = new mongoose.Schema({
-  email: { type: String, required: true, unique: true }, // Use email instead of username
+  email: { type: String, required: true, unique: true },
   items: [cartItemSchema],
 });
 
