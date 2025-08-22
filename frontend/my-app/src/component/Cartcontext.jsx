@@ -15,7 +15,7 @@ export const AppProvider = ({ children }) => {
       
       if (storedToken && storedUser) {
         try {
-          const response = await fetch('http://localhost:3030/verify-token', {
+          const response = await fetch('https://full-fledged-ecommerce-website.onrender.com/verify-token', {
             headers: {
               'Authorization': `Bearer ${storedToken}`
             }
@@ -47,7 +47,7 @@ export const AppProvider = ({ children }) => {
     const loadCart = async () => {
       if (user?.email && token) {
         try {
-          const response = await fetch(`http://localhost:3030/cart/${user.email}`, {
+          const response = await fetch(`https://full-fledged-ecommerce-website.onrender.com/cart/${user.email}`, {
             headers: {
               'Authorization': `Bearer ${token}`
             }
@@ -83,7 +83,7 @@ export const AppProvider = ({ children }) => {
     }
 
     try {
-      const response = await fetch("http://localhost:3030/cart/add", {
+      const response = await fetch("https://full-fledged-ecommerce-website.onrender.com/cart/add", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -111,7 +111,7 @@ export const AppProvider = ({ children }) => {
     }
 
     try {
-      const response = await fetch("http://localhost:3030/cart/add", {
+      const response = await fetch("https://full-fledged-ecommerce-website.onrender.com/cart/add", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -135,7 +135,7 @@ export const AppProvider = ({ children }) => {
   const logout = async () => {
     if (token) {
       try {
-        await fetch('http://localhost:3030/logout', {
+        await fetch('https://full-fledged-ecommerce-website.onrender.com/logout', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`

@@ -27,7 +27,7 @@ const LoginSignup = () => {
         password,
       });
 
-      const response = await fetch("http://localhost:3030/login", {
+      const response = await fetch("https://full-fledged-ecommerce-website.onrender.com/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

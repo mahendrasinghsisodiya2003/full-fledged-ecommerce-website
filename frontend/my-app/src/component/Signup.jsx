@@ -30,7 +30,7 @@ const Signup = () => {
     try {
       console.log("Sending signup request for email:", email);
       
-      const response = await fetch("http://localhost:3030/signup", {
+      const response = await fetch("https://full-fledged-ecommerce-website.onrender.com/signup", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

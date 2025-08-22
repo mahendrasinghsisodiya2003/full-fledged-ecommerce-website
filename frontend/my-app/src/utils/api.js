@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:3030';
+const API_BASE_URL = 'https://full-fledged-ecommerce-website.onrender.com';
 
 export const apiCall = async (endpoint, options = {}) => {
   const token = localStorage.getItem('token');
