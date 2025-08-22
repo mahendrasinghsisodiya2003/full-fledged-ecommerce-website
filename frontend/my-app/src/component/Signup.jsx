@@ -42,10 +42,14 @@ const Signup = () => {
         }),
       });
 
+      console.log("Response status:", response.status);
+      console.log("Response headers:", response.headers);
+
       const data = await response.json();
+      console.log("Response data:", data);
 
       if (!response.ok) {
-        throw new Error(data.message || "Signup failed");
+        throw new Error(data.message || data.error || "Signup failed");
       }
 
       console.log("Signup Response:", data);
@@ -61,7 +65,11 @@ const Signup = () => {
       }
     } catch (err) {
       console.error("Signup Error:", err);
-      setError(err.message || "Something went wrong");
+      if (err.name === 'TypeError' && err.message.includes('fetch')) {
+        setError("Cannot connect to server. Please check if the backend is running.");
+      } else {
+        setError(err.message || "Something went wrong");
+      }
     } finally {
       setLoading(false);
     }

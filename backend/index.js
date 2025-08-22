@@ -25,7 +25,7 @@ app.listen(port, () => {
   console.log(`Server is running at http://localhost:${port}`);
 });
 
-mongoose.connect(process.env.MONGOOS, {
+mongoose.connect(process.env.MONGOOS || "mongodb://127.0.0.1:27017/ecommerce", {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
@@ -73,6 +73,10 @@ app.post("/signup", async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
+    if (!username || !email || !password) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
     console.log("Signup request received for email:", email);
 
     const existingUser = await NewUser.findOne({ email });
@@ -88,9 +92,10 @@ app.post("/signup", async (req, res) => {
 
     console.log("User created:", newUser);
 
+    const secretKey = process.env.SECRET_KEY || "fallback-secret-key-for-development-only";
     const token = jwt.sign(
       { id: newUser._id, email: newUser.email },
-      process.env.SECRET_KEY,
+      secretKey,
       { expiresIn: "24h" }
     );
 
@@ -113,6 +118,10 @@ app.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password are required" });
+    }
+
     const normalizedEmail = email.trim().toLowerCase();
 
     console.log("Login request received for email:", normalizedEmail);
@@ -132,9 +141,10 @@ app.post("/login", async (req, res) => {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
+    const secretKey = process.env.SECRET_KEY || "fallback-secret-key-for-development-only";
     const token = jwt.sign(
       { id: user._id, email: user.email },
-      process.env.SECRET_KEY,
+      secretKey,
       { expiresIn: "24h" }
     );
 
@@ -212,7 +222,7 @@ app.get("/cart/:email", authenticateToken, async (req, res) => {
   }
 });
 
-const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
+const stripe = Stripe(process.env.STRIPE_SECRET_KEY || "sk_test_51QxRlwHOmiBafKm0UwHT5i1ikYe0jJthLBToKG2OkWVgNfSTaWY3E01UO2VLGZ3QJCqBliDAeQSw5aiEbdiivztH00EfI4vE7Y");
 app.post("/create-payment-intent", authenticateToken, async (req, res) => {
   const { amount } = req.body;
 

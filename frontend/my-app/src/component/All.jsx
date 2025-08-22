@@ -21,7 +21,7 @@ const All = () => {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold">All Products</h1>
+      <h1 className="text-2xl text-center font-bold">All Products</h1>
       {/* Responsive Grid Layout */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4">
         {products.map((product) => (
