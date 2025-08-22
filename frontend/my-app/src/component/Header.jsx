@@ -1,23 +1,22 @@
 import React, { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { FaUserCircle, FaBars } from "react-icons/fa";
+import { useUser } from "./Cartcontext";
 
-const Header = ({ user, setUser }) => {
+const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [navOpen, setNavOpen] = useState(false); // State for mobile navigation
+  const [navOpen, setNavOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, logout } = useUser();
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    setUser(null); // Clear the user state
-    navigate("/"); // Redirect to home page after logout
+  const handleLogout = async () => {
+    await logout();
+    navigate("/");
   };
 
   return (
     <div className="bg-zinc-400 h-20 flex items-center justify-between w-full px-4 top-0 left-0 right-0 z-50">
-      {/* Left Section: Logo */}
       <div className="flex items-center">
         <Link to="/">
           <img
@@ -28,7 +27,6 @@ const Header = ({ user, setUser }) => {
         </Link>
       </div>
 
-      {/* Middle Section: Navigation Links (Visible on larger screens) */}
       <ul className="hidden sm:flex gap-8 text-xl transition-all duration-300 ease-in-out mx-auto">
         <li className={`cursor-pointer font-medium ${location.pathname === "/" ? "text-blue-600 font-bold" : ""}`}>
           <Link to="/">Home</Link>
@@ -44,19 +42,15 @@ const Header = ({ user, setUser }) => {
         </li>
       </ul>
 
-      {/* Right Section: Hamburger Menu (Small Screens) and User/Cart Section */}
       <div className="flex items-center gap-4">
-        {/* Hamburger Menu Icon (Visible on small screens) */}
         <div className="sm:hidden">
           <FaBars
             className="text-3xl cursor-pointer"
-            onClick={() => setNavOpen(!navOpen)} // Toggle mobile navigation
+            onClick={() => setNavOpen(!navOpen)}
           />
         </div>
 
-        {/* User and Cart Section */}
         <div className="flex items-center gap-4">
-          {/* Show Login Button if No User, Else Show User Icon */}
           {user ? (
             <div className="relative">
               <FaUserCircle className="text-3xl cursor-pointer" onClick={() => setMenuOpen(!menuOpen)} />
@@ -87,12 +81,10 @@ const Header = ({ user, setUser }) => {
             </button>
           )}
 
-          {/* Cart Icon */}
           <i className="fa fa-shopping-cart text-3xl cursor-pointer" onClick={() => navigate('/cart')}></i>
         </div>
       </div>
 
-      {/* Mobile Navigation Menu (Visible on small screens) */}
       {navOpen && (
         <div className="sm:hidden absolute top-20 left-0 w-full bg-zinc-400 z-50">
           <ul className="flex flex-col items-center gap-4 py-4">

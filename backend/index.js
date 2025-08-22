@@ -10,6 +10,7 @@ const bcrypt = require("bcryptjs");
 const Stripe = require("stripe");
 const Cart = require("./model/Cart");
 const rateLimit = require('express-rate-limit');
+const { authenticateToken, optionalAuth } = require('./middleware/auth');
 require("dotenv").config();
 
 const limiter = rateLimit({
@@ -87,8 +88,15 @@ app.post("/signup", async (req, res) => {
 
     console.log("User created:", newUser);
 
+    const token = jwt.sign(
+      { id: newUser._id, email: newUser.email },
+      process.env.SECRET_KEY,
+      { expiresIn: "24h" }
+    );
+
     res.status(201).json({
       message: "User created successfully",
+      token,
       user: {
         id: newUser._id,
         username: newUser.username,
@@ -124,17 +132,88 @@ app.post("/login", async (req, res) => {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    const token = jwt.sign({ id: user._id }, process.env.SECRET_KEY, { expiresIn: "1h" });
+    const token = jwt.sign(
+      { id: user._id, email: user.email },
+      process.env.SECRET_KEY,
+      { expiresIn: "24h" }
+    );
 
-    res.json({ token, user: { id: user._id, username: user.username, email: user.email } });
+    res.json({ 
+      message: "Login successful",
+      token, 
+      user: { 
+        id: user._id, 
+        username: user.username, 
+        email: user.email 
+      } 
+    });
   } catch (error) {
     console.error("Error during login:", error);
     res.status(500).json({ error: "Internal Server Error", details: error.message });
   }
 });
 
+app.get("/verify-token", authenticateToken, (req, res) => {
+  res.json({ 
+    message: "Token is valid", 
+    user: req.user 
+  });
+});
+
+app.post("/logout", authenticateToken, (req, res) => {
+  res.json({ message: "Logged out successfully" });
+});
+
+app.post("/cart/add", authenticateToken, async (req, res) => {
+  try {
+    const { productId, quantity } = req.body;
+    const email = req.user.email;
+
+    let cart = await Cart.findOne({ email });
+
+    if (!cart) {
+      cart = new Cart({ email, items: [] });
+    }
+
+    const itemIndex = cart.items.findIndex((item) => item.productId === productId);
+
+    if (itemIndex > -1) {
+      if (quantity === 0) {
+        cart.items.splice(itemIndex, 1);
+      } else {
+        cart.items[itemIndex].quantity = quantity;
+      }
+    } else if (quantity > 0) {
+      cart.items.push({ productId, quantity });
+    }
+
+    await cart.save();
+    res.status(200).json({ message: "Cart updated successfully", cart });
+  } catch (error) {
+    res.status(500).json({ message: "Error updating cart", error });
+  }
+});
+
+app.get("/cart/:email", authenticateToken, async (req, res) => {
+  try {
+    const { email } = req.params;
+    
+    if (req.user.email !== email) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    const cart = await Cart.findOne({ email });
+    if (!cart) {
+      return res.status(404).json({ message: "Cart not found" });
+    }
+    res.status(200).json({ cart });
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching cart", error });
+  }
+});
+
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
-app.post("/create-payment-intent", async (req, res) => {
+app.post("/create-payment-intent", authenticateToken, async (req, res) => {
   const { amount } = req.body;
 
   try {

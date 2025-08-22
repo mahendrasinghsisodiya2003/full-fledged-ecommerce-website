@@ -9,29 +9,16 @@ import LoginSignup from "@/component/Loginsignup";
 import Signup from "@/component/Signup";
 import Productdisplay from "@/component/Productdisplay";
 import Userpage from "@/component/Userpage";
-import { useEffect, useState } from "react";
 import Protectedroute from "@/component/Protectedroute";
 import Buy from "@/component/Buy";
+import { AppProvider, useUser } from "@/component/Cartcontext";
 
-function App() {
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    const userData = localStorage.getItem("user");
-  
-    if (userData) {
-      try {
-        setUser(JSON.parse(userData));
-      } catch (error) {
-        console.error("Error parsing user data:", error);
-        localStorage.removeItem("user");
-      }
-    }
-  }, []);
+function AppContent() {
+  const { user } = useUser();
 
   return (
     <>
-      <Header user={user} setUser={setUser} />
+      <Header />
       <Routes>
         <Route
           path="/"
@@ -43,8 +30,8 @@ function App() {
             )
           }
         />
-        <Route path="/login" element={<LoginSignup setUser={setUser} />} />
-        <Route path="/signup" element={<Signup setUser={setUser} />} />
+        <Route path="/login" element={<LoginSignup />} />
+        <Route path="/signup" element={<Signup />} />
         <Route element={<Protectedroute user={user} />}>
           <Route path="/:username" element={<Userpage user={user} />} />
           <Route path="/all" element={<All />} />
@@ -56,6 +43,14 @@ function App() {
         </Route>
       </Routes>
     </>
+  );
+}
+
+function App() {
+  return (
+    <AppProvider>
+      <AppContent />
+    </AppProvider>
   );
 }
 

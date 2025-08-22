@@ -1,13 +1,14 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { useUser } from "./Cartcontext";
 
-const LoginSignup = ({ setUser }) => {
+const LoginSignup = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const { setUser, setToken } = useUser();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -20,27 +21,39 @@ const LoginSignup = ({ setUser }) => {
     setError("");
   
     try {
-      // Ensure the username is the full email address
       const normalizedEmail = username.trim().toLowerCase();
       console.log("Sending login request with payload:", {
         email: normalizedEmail,
         password,
-      }); // Log the request payload
-  
-      const response = await axios.post("https://full-fledged-ecommerce-website.onrender.com/login", {
-        email: normalizedEmail, // Send the full email address
-        password,
       });
-      console.log("Login Response:", response.data); // Log the response
-  
-      // ✅ Login successful → Store token & Update user state
-      localStorage.setItem("token", response.data.token);
-      localStorage.setItem("user", JSON.stringify(response.data.user));
-      setUser(response.data.user); // Update user state in App.jsx
-      navigate(`/${response.data.user.username}`); // Navigate to user-specific page
+
+      const response = await fetch("http://localhost:3030/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: normalizedEmail,
+          password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Login failed");
+      }
+
+      console.log("Login Response:", data);
+
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+      setToken(data.token);
+      setUser(data.user);
+      navigate(`/${data.user.username}`);
     } catch (err) {
-      console.error("Login Error:", err.response?.data); // Log the error
-      setError(err.response?.data?.message || "Something went wrong");
+      console.error("Login Error:", err);
+      setError(err.message || "Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -56,13 +69,13 @@ const LoginSignup = ({ setUser }) => {
         {error && <p className="text-red-500 text-sm text-center mb-4">{error}</p>}
 
         <form onSubmit={handleLogin} className="space-y-4">
-        <input
-  type="text"
-  placeholder="Email" // Update placeholder to "Email"
-  className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500"
-  value={username}
-  onChange={(e) => setUsername(e.target.value)}
-/>
+          <input
+            type="text"
+            placeholder="Email"
+            className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+          />
           <input
             type="password"
             placeholder="Password"

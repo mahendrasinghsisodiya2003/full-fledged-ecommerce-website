@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { useUser } from "./Cartcontext";
 
-const Signup = ({ setUser }) => {
+const Signup = () => {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -10,11 +10,11 @@ const Signup = ({ setUser }) => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { setUser, setToken } = useUser();
 
   const handleSignup = async (e) => {
     e.preventDefault();
   
-    // Validate fields
     if (!username || !email || !password || !confirmPassword) {
       setError("All fields are required");
       return;
@@ -28,25 +28,40 @@ const Signup = ({ setUser }) => {
     setError("");
   
     try {
-      console.log("Sending signup request for email:", email); // Log the email
-      const response = await axios.post("https://full-fledged-ecommerce-website.onrender.com/signup", {
-        username,
-        email,
-        password,
+      console.log("Sending signup request for email:", email);
+      
+      const response = await fetch("http://localhost:3030/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username,
+          email,
+          password,
+        }),
       });
-      console.log("Signup Response:", response.data); // Log the response
-  
-      // ✅ Signup successful → Update user state
-      if (response.data.user) {
-        localStorage.setItem("user", JSON.stringify(response.data.user));
-        setUser(response.data.user); // Update user state in App.jsx
-        navigate(`/${response.data.user.username}`); // Navigate to user-specific page
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Signup failed");
+      }
+
+      console.log("Signup Response:", data);
+
+      if (data.user && data.token) {
+        localStorage.setItem("user", JSON.stringify(data.user));
+        localStorage.setItem("token", data.token);
+        setUser(data.user);
+        setToken(data.token);
+        navigate(`/${data.user.username}`);
       } else {
         setError("User data not found in response");
       }
     } catch (err) {
-      console.error("Signup Error:", err.response?.data); // Log the error
-      setError(err.response?.data?.message || "Something went wrong");
+      console.error("Signup Error:", err);
+      setError(err.message || "Something went wrong");
     } finally {
       setLoading(false);
     }

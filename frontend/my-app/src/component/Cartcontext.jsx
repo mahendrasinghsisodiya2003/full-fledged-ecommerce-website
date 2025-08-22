@@ -6,12 +6,52 @@ const CartContext = createContext();
 export const AppProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [cart, setCart] = useState([]);
+  const [token, setToken] = useState(localStorage.getItem('token'));
+
+  useEffect(() => {
+    const verifyToken = async () => {
+      const storedToken = localStorage.getItem('token');
+      const storedUser = localStorage.getItem('user');
+      
+      if (storedToken && storedUser) {
+        try {
+          const response = await fetch('http://localhost:3030/verify-token', {
+            headers: {
+              'Authorization': `Bearer ${storedToken}`
+            }
+          });
+          
+          if (response.ok) {
+            setToken(storedToken);
+            setUser(JSON.parse(storedUser));
+          } else {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            setToken(null);
+            setUser(null);
+          }
+        } catch (error) {
+          console.error('Token verification failed:', error);
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          setToken(null);
+          setUser(null);
+        }
+      }
+    };
+
+    verifyToken();
+  }, []);
 
   useEffect(() => {
     const loadCart = async () => {
-      if (user?.email) {
+      if (user?.email && token) {
         try {
-          const response = await fetch(`http://localhost:3030/cart/${user.email}`);
+          const response = await fetch(`http://localhost:3030/cart/${user.email}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
           if (response.ok) {
             const data = await response.json();
             if (data.cart) {
@@ -25,10 +65,10 @@ export const AppProvider = ({ children }) => {
     };
 
     loadCart();
-  }, [user]);
+  }, [user, token]);
 
   const addToCart = async (product) => {
-    if (!user?.email) {
+    if (!user?.email || !token) {
       setCart((prevCart) => {
         const existingItem = prevCart.find((item) => item.id === product.id);
         if (existingItem) {
@@ -47,9 +87,9 @@ export const AppProvider = ({ children }) => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
         },
         body: JSON.stringify({
-          email: user.email,
           productId: product.id,
           quantity: 1,
         }),
@@ -65,7 +105,7 @@ export const AppProvider = ({ children }) => {
   };
 
   const removeFromCart = async (productId) => {
-    if (!user?.email) {
+    if (!user?.email || !token) {
       setCart((prevCart) => prevCart.filter((item) => item.id !== productId));
       return;
     }
@@ -75,9 +115,9 @@ export const AppProvider = ({ children }) => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
         },
         body: JSON.stringify({
-          email: user.email,
           productId: productId,
           quantity: 0,
         }),
@@ -92,8 +132,29 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+  const logout = async () => {
+    if (token) {
+      try {
+        await fetch('http://localhost:3030/logout', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+      } catch (error) {
+        console.error('Logout error:', error);
+      }
+    }
+    
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setToken(null);
+    setUser(null);
+    setCart([]);
+  };
+
   return (
-    <UserContext.Provider value={{ user, setUser }}>
+    <UserContext.Provider value={{ user, setUser, token, setToken, logout }}>
       <CartContext.Provider value={{ cart, addToCart, removeFromCart, setCart }}>
         {children}
       </CartContext.Provider>
