@@ -40,7 +40,6 @@ app.use(express.json());
 
 app.get("/all", async (req, res) => {
   try {
-    console.log("GET /all called");
     const response = await axios.get("https://fakestoreapi.com/products");
     res.json(response.data);
   } catch (error) {
@@ -50,7 +49,6 @@ app.get("/all", async (req, res) => {
 
 app.get("/men", async (req, res) => {
   try {
-    console.log("GET /men called");
     const response = await axios.get("https://fakestoreapi.com/products/category/men's clothing");
     res.json(response.data);
   } catch (error) {
@@ -60,7 +58,6 @@ app.get("/men", async (req, res) => {
 
 app.get("/women", async (req, res) => {
   try {
-    console.log("GET /women called");
     const response = await axios.get("https://fakestoreapi.com/products/category/women's clothing");
     res.json(response.data);
   } catch (error) {
