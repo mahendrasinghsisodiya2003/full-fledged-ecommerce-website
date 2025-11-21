@@ -21,22 +21,32 @@ const limiter = rateLimit({
 
 app.use(limiter);
 
-app.listen(port, () => {
-  console.log(`Server is running at http://localhost:${port}`);
-});
-
-mongoose.connect(process.env.MONGOOS || "mongodb://127.0.0.1:27017/ecommerce", {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => console.log("✅ Connected to MongoDB"))
-.catch((err) => console.error("❌ MongoDB Connection Error:", err));
-
+// CORS and JSON middleware - MUST be before routes
 app.use(cors({
   origin: "*",
   credentials: true
 }));
 app.use(express.json());
+
+// Request logger for debugging
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  next();
+});
+
+// Connect to MongoDB (async, non-blocking)
+mongoose.connect(process.env.MONGO_URI || "mongodb://127.0.0.1:27017/ecommerce", {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+
+.then(() => console.log("✅ Connected to MongoDB"))
+.catch((err) => console.error("❌ MongoDB Connection Error:", err.message || err));
+
+// Start server immediately (don't wait for DB)
+app.listen(port, () => {
+  console.log(`Server is running at http://localhost:${port}`);
+});
 
 app.get("/all", async (req, res) => {
   try {
@@ -44,27 +54,32 @@ app.get("/all", async (req, res) => {
     const response = await axios.get("https://fakestoreapi.com/products");
     res.json(response.data);
   } catch (error) {
-    res.status(500).json({ message: "Error fetching products", error });
+    console.error("Error in /all:", error.message || error);
+    res.status(500).json({ message: "Error fetching products", error: error.message || error });
   }
 });
 
 app.get("/men", async (req, res) => {
   try {
     console.log("GET /men called");
-    const response = await axios.get("https://fakestoreapi.com/products/category/men's clothing");
+    const url = "https://fakestoreapi.com/products/category/" + encodeURIComponent("men's clothing");
+    const response = await axios.get(url);
     res.json(response.data);
   } catch (error) {
-    res.status(500).json({ message: "Error fetching products", error });
+    console.error("Error in /men:", error.message || error);
+    res.status(500).json({ message: "Error fetching products", error: error.message || error });
   }
 });
 
 app.get("/women", async (req, res) => {
   try {
     console.log("GET /women called");
-    const response = await axios.get("https://fakestoreapi.com/products/category/women's clothing");
+    const url = "https://fakestoreapi.com/products/category/" + encodeURIComponent("women's clothing");
+    const response = await axios.get(url);
     res.json(response.data);
   } catch (error) {
-    res.status(500).json({ message: "Error fetching products", error });
+    console.error("Error in /women:", error.message || error);
+    res.status(500).json({ message: "Error fetching products", error: error.message || error });
   }
 });
 
@@ -225,8 +240,18 @@ app.get("/cart/:email", authenticateToken, async (req, res) => {
   }
 });
 
-const stripe = Stripe(process.env.STRIPE_SECRET_KEY || "sk_test_51QxRlwHOmiBafKm0UwHT5i1ikYe0jJthLBToKG2OkWVgNfSTaWY3E01UO2VLGZ3QJCqBliDAeQSw5aiEbdiivztH00EfI4vE7Y");
+let stripe;
+try {
+  stripe = Stripe(process.env.STRIPE_SECRET_KEY || "sk_test_51QxRlwHOmiBafKm0UwHT5i1ikYe0jJthLBToKG2OkWVgNfSTaWY3E01UO2VLGZ3QJCqBliDAeQSw5aiEbdiivztH00EfI4vE7Y");
+} catch (err) {
+  console.error("Stripe initialization error:", err.message);
+  stripe = null;
+}
+
 app.post("/create-payment-intent", authenticateToken, async (req, res) => {
+  if (!stripe) {
+    return res.status(500).json({ error: "Stripe not initialized" });
+  }
   const { amount } = req.body;
 
   try {
