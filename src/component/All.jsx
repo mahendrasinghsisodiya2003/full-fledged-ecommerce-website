@@ -52,4 +52,4 @@ const All = () => {
   );
 };
 
-export default All;
+export default All;git push --set-upstream origin main
