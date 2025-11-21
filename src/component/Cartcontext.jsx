@@ -1,73 +1,160 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 
-// Create contexts
 const UserContext = createContext();
 const CartContext = createContext();
 
-// Combined provider
 export const AppProvider = ({ children }) => {
-  // User state
   const [user, setUser] = useState(null);
-
-  // Cart state
   const [cart, setCart] = useState([]);
+  const [token, setToken] = useState(localStorage.getItem('token'));
 
-  // Load cart from local storage on initial render
   useEffect(() => {
-    const savedCart = localStorage.getItem("cart");
-    if (savedCart) {
-      setCart(JSON.parse(savedCart));
-    }
+    const verifyToken = async () => {
+      const storedToken = localStorage.getItem('token');
+      const storedUser = localStorage.getItem('user');
+      
+      if (storedToken && storedUser) {
+        try {
+          const response = await fetch('https://full-fledged-ecommerce-website.onrender.com/verify-token', {
+            headers: {
+              'Authorization': `Bearer ${storedToken}`
+            }
+          });
+          
+          if (response.ok) {
+            setToken(storedToken);
+            setUser(JSON.parse(storedUser));
+          } else {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            setToken(null);
+            setUser(null);
+          }
+        } catch (error) {
+          console.error('Token verification failed:', error);
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          setToken(null);
+          setUser(null);
+        }
+      }
+    };
+
+    verifyToken();
   }, []);
 
-  // Save cart to local storage whenever it changes
   useEffect(() => {
-    localStorage.setItem("cart", JSON.stringify(cart));
-  }, [cart]);
+    const loadCart = async () => {
+      if (user?.email && token) {
+        try {
+          const response = await fetch(`https://full-fledged-ecommerce-website.onrender.com/cart/${user.email}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          if (response.ok) {
+            const data = await response.json();
+            if (data.cart) {
+              setCart(data.cart.items);
+            }
+          }
+        } catch (error) {
+          console.error("Error loading cart:", error);
+        }
+      }
+    };
 
-  // Fetch cart from server when user logs in
-  useEffect(() => {
-    if (user) {
-      fetchCartFromServer(user._id);
+    loadCart();
+  }, [user, token]);
+
+  const addToCart = async (product) => {
+    if (!user?.email || !token) {
+      setCart((prevCart) => {
+        const existingItem = prevCart.find((item) => item.id === product.id);
+        if (existingItem) {
+          return prevCart.map((item) =>
+            item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+          );
+        } else {
+          return [...prevCart, { ...product, quantity: 1 }];
+        }
+      });
+      return;
     }
-  }, [user]);
 
-  const fetchCartFromServer = async (userId) => {
     try {
-      const response = await fetch(`https://full-fledged-ecommerce-website.onrender.com/getcart/${userId}`);
+      const response = await fetch("https://full-fledged-ecommerce-website.onrender.com/cart/add", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          productId: product.id,
+          quantity: 1,
+        }),
+      });
+
       if (response.ok) {
         const data = await response.json();
-        setCart(data.cart); // assuming your response is { cart: [...] }
-      } else {
-        console.error("Failed to fetch cart from server");
+        setCart(data.cart.items);
       }
     } catch (error) {
-      console.error("Error fetching cart from server:", error);
+      console.error("Error adding to cart:", error);
     }
   };
 
-  // Add to cart
-  const addToCart = (product) => {
-    setCart((prevCart) => {
-      const existingItem = prevCart.find((item) => item.id === product.id);
+  const removeFromCart = async (productId) => {
+    if (!user?.email || !token) {
+      setCart((prevCart) => prevCart.filter((item) => item.id !== productId));
+      return;
+    }
 
-      if (existingItem) {
-        return prevCart.map((item) =>
-          item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
-        );
-      } else {
-        return [...prevCart, { ...product, quantity: 1 }];
+    try {
+      const response = await fetch("https://full-fledged-ecommerce-website.onrender.com/cart/add", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          productId: productId,
+          quantity: 0,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setCart(data.cart.items);
       }
-    });
+    } catch (error) {
+      console.error("Error removing from cart:", error);
+    }
   };
 
-  // Remove from cart
-  const removeFromCart = (productId) => {
-    setCart((prevCart) => prevCart.filter((item) => item.id !== productId));
+  const logout = async () => {
+    if (token) {
+      try {
+        await fetch('https://full-fledged-ecommerce-website.onrender.com/logout', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+      } catch (error) {
+        console.error('Logout error:', error);
+      }
+    }
+    
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setToken(null);
+    setUser(null);
+    setCart([]);
   };
 
   return (
-    <UserContext.Provider value={{ user, setUser }}>
+    <UserContext.Provider value={{ user, setUser, token, setToken, logout }}>
       <CartContext.Provider value={{ cart, addToCart, removeFromCart, setCart }}>
         {children}
       </CartContext.Provider>
@@ -75,6 +162,5 @@ export const AppProvider = ({ children }) => {
   );
 };
 
-// Custom hooks for accessing contexts
 export const useUser = () => useContext(UserContext);
-export const useCart = () => useContext(CartContext);
+export const useCart = () => useContext(CartContext); 

@@ -57,7 +57,7 @@ const CheckoutForm = ({ total }) => {
         disabled={!stripe}
         className="mt-4 px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition"
       >
-        Pay ${total.toFixed(2)}
+        Pay ${total.taoFixed(2)}
       </button>
       {error && <p className="mt-4 text-red-500">{error}</p>}
       {success && <p className="mt-4 text-green-500">Payment successful!</p>}
