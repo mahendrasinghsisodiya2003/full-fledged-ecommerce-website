@@ -39,7 +39,6 @@ mongoose.connect(process.env.MONGO_URI || "mongodb://127.0.0.1:27017/ecommerce",
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
-
 .then(() => console.log("✅ Connected to MongoDB"))
 .catch((err) => console.error("❌ MongoDB Connection Error:", err.message || err));
 
@@ -48,38 +47,105 @@ app.listen(port, () => {
   console.log(`Server is running at http://localhost:${port}`);
 });
 
+// Simple fallback product list (in case remote fails)
+const fallbackProducts = [
+  { id: 1, title: "Fallback Product 1", price: 9.99, image: "", description: "Fallback item" },
+  { id: 2, title: "Fallback Product 2", price: 19.99, image: "", description: "Fallback item" }
+];
+
+// Proxy base (allorigins) - encodes target URL
+const PROXY_BASE = "https://api.allorigins.win/raw?url=";
+const axiosOptions = {
+  timeout: 8000,
+  headers: {
+    Accept: "application/json, text/plain, */*",
+    // Browser-like UA helps avoid simple server-side blocks
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+  },
+  // let us inspect non-2xx responses instead of throwing
+  validateStatus: () => true
+};
+
 app.get("/all", async (req, res) => {
+  console.log("GET /all called");
+  const target = "https://fakestoreapi.com/products";
+  const proxiedUrl = PROXY_BASE + encodeURIComponent(target);
+
   try {
-    console.log("GET /all called");
-    const response = await axios.get("https://fakestoreapi.com/products");
-    res.json(response.data);
+    let response = await axios.get(proxiedUrl, axiosOptions);
+
+    // If remote returned non-2xx, try once more (transient)
+    if (response.status >= 400) {
+      console.warn("First proxied request returned status", response.status, "— retrying once...");
+      response = await axios.get(proxiedUrl, axiosOptions);
+    }
+
+    if (response.status >= 200 && response.status < 300 && Array.isArray(response.data)) {
+      console.log("Fetched products from proxied fakestoreapi:", response.data.length);
+      return res.json(response.data);
+    }
+
+    console.error("Proxy/fakestore returned non-2xx. status:", response.status, "data:", response.data);
+    return res.json(fallbackProducts);
   } catch (error) {
-    console.error("Error in /all:", error.message || error);
-    res.status(500).json({ message: "Error fetching products", error: error.message || error });
+    console.error("Unexpected error in /all - full error:", {
+      message: error.message,
+      code: error.code,
+      stack: error.stack,
+      responseStatus: error.response && error.response.status,
+      responseData: error.response && error.response.data,
+    });
+    return res.json(fallbackProducts);
   }
 });
 
 app.get("/men", async (req, res) => {
+  console.log("GET /men called");
+  const target = "https://fakestoreapi.com/products/category/" + encodeURIComponent("men's clothing");
+  const proxiedUrl = PROXY_BASE + encodeURIComponent(target);
+
   try {
-    console.log("GET /men called");
-    const url = "https://fakestoreapi.com/products/category/" + encodeURIComponent("men's clothing");
-    const response = await axios.get(url);
-    res.json(response.data);
+    let response = await axios.get(proxiedUrl, axiosOptions);
+
+    if (response.status >= 400) {
+      console.warn("First proxied /men request returned", response.status, "— retrying once...");
+      response = await axios.get(proxiedUrl, axiosOptions);
+    }
+
+    if (response.status >= 200 && response.status < 300 && Array.isArray(response.data)) {
+      return res.json(response.data);
+    }
+
+    console.error("Proxy/fakestore /men non-2xx:", response.status, response.data);
+    return res.json([]);
   } catch (error) {
     console.error("Error in /men:", error.message || error);
-    res.status(500).json({ message: "Error fetching products", error: error.message || error });
+    return res.json([]);
   }
 });
 
 app.get("/women", async (req, res) => {
+  console.log("GET /women called");
+  const target = "https://fakestoreapi.com/products/category/" + encodeURIComponent("women's clothing");
+  const proxiedUrl = PROXY_BASE + encodeURIComponent(target);
+
   try {
-    console.log("GET /women called");
-    const url = "https://fakestoreapi.com/products/category/" + encodeURIComponent("women's clothing");
-    const response = await axios.get(url);
-    res.json(response.data);
+    let response = await axios.get(proxiedUrl, axiosOptions);
+
+    if (response.status >= 400) {
+      console.warn("First proxied /women request returned", response.status, "— retrying once...");
+      response = await axios.get(proxiedUrl, axiosOptions);
+    }
+
+    if (response.status >= 200 && response.status < 300 && Array.isArray(response.data)) {
+      return res.json(response.data);
+    }
+
+    console.error("Proxy/fakestore /women non-2xx:", response.status, response.data);
+    return res.json([]);
   } catch (error) {
     console.error("Error in /women:", error.message || error);
-    res.status(500).json({ message: "Error fetching products", error: error.message || error });
+    return res.json([]);
   }
 });
 
@@ -240,18 +306,8 @@ app.get("/cart/:email", authenticateToken, async (req, res) => {
   }
 });
 
-let stripe;
-try {
-  stripe = Stripe(process.env.STRIPE_SECRET_KEY || "sk_test_51QxRlwHOmiBafKm0UwHT5i1ikYe0jJthLBToKG2OkWVgNfSTaWY3E01UO2VLGZ3QJCqBliDAeQSw5aiEbdiivztH00EfI4vE7Y");
-} catch (err) {
-  console.error("Stripe initialization error:", err.message);
-  stripe = null;
-}
-
+const stripe = Stripe(process.env.STRIPE_SECRET_KEY || "sk_test_51QxRlwHOmiBafKm0UwHT5i1ikYe0jJthLBToKG2OkWVgNfSTaWY3E01UO2VLGZ3QJCqBliDAeQSw5aiEbdiivztH00EfI4vE7Y");
 app.post("/create-payment-intent", authenticateToken, async (req, res) => {
-  if (!stripe) {
-    return res.status(500).json({ error: "Stripe not initialized" });
-  }
   const { amount } = req.body;
 
   try {
